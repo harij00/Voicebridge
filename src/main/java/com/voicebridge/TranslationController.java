@@ -15,7 +15,7 @@ public class TranslationController {
 
     private final RestClient client = RestClient.create();
 
-    @Value("${mymemory.email:}")
+    @Value("${MYMEMORY_EMAIL:}")
     private String email;
 
     @GetMapping("/api/translate")
@@ -24,29 +24,36 @@ public class TranslationController {
             @RequestParam String target) {
 
         try {
-            var uriBuilder = UriComponentsBuilder
-                    .fromHttpUrl("https://api.mymemory.translated.net/get")
+            String url = UriComponentsBuilder
+                    .fromUriString("https://api.mymemory.translated.net/get")
                     .queryParam("q", text)
-                    .queryParam("langpair", "autodetect|" + target);
-
-            if (!email.isBlank()) {
-                uriBuilder.queryParam("de", email);
-            }
-
-            String url = uriBuilder.build()
+                    .queryParam("langpair", "en|" + target)
+                    .queryParam("de", email.isBlank() ? null : email)
+                    .build()
                     .encode()
                     .toUriString();
 
-            return client.get()
+            Map response = client.get()
                     .uri(url)
                     .retrieve()
                     .body(Map.class);
 
+            return response;
+
         } catch (HttpClientErrorException.TooManyRequests e) {
+
             return Map.of(
                     "responseStatus", 429,
                     "responseDetails",
-                    "Translation limit reached. Please try again later."
+                    "Daily translation limit reached. Please try again later."
+            );
+
+        } catch (Exception e) {
+
+            return Map.of(
+                    "responseStatus", 500,
+                    "responseDetails",
+                    "Translation service failed: " + e.getMessage()
             );
         }
     }
