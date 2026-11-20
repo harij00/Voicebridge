@@ -1,93 +1,127 @@
 
 package com.voicebridge;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.util.UriUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
 @CrossOrigin
 public class TranslationController {
 
-    private final RestClient client = RestClient.create();
+    private static final String API_URL =
+            "https://apertium.org/apy/translate";
 
-    @Value("${MYMEMORY_EMAIL:}")
-    private String email;
+    private final RestClient client = RestClient.create();
 
     @GetMapping("/api/translate")
     public Map<String, Object> translate(
             @RequestParam String text,
-            @RequestParam String target) {
+            @RequestParam String target,
+            @RequestParam(defaultValue = "en") String source) {
+
+        if (text == null || text.isBlank()) {
+            return error(400, "Please enter some text.");
+        }
+
+        if (target == null || target.isBlank()
+                || source == null || source.isBlank()) {
+            return error(400, "Please select valid languages.");
+        }
+
+        text = text.trim();
+        source = source.trim().toLowerCase();
+        target = target.trim().toLowerCase();
+
+        if (text.length() > 2000) {
+            return error(400, "Text must not exceed 2000 characters.");
+        }
+
+        if (!source.matches("[a-z]{2,3}(_[a-zA-Z0-9]+)?")
+                || !target.matches("[a-z]{2,3}(_[a-zA-Z0-9]+)?")) {
+            return error(400, "Invalid language code.");
+        }
 
         try {
-            if (text == null || text.isBlank()) {
-                return Map.of(
-                        "responseStatus", 400,
-                        "responseDetails", "Please enter some text."
-                );
-            }
+            URI uri = UriComponentsBuilder
+                    .fromUriString(API_URL)
+                    .queryParam("q", text)
+                    .queryParam("langpair", source + "|" + target)
+                    .queryParam("markUnknown", "no")
+                    .build()
+                    .encode()
+                    .toUri();
 
-            if (target == null || target.isBlank()) {
-                return Map.of(
-                        "responseStatus", 400,
-                        "responseDetails", "Please select a target language."
-                );
-            }
-
-            String encodedText = UriUtils.encodeQueryParam(
-                    text, StandardCharsets.UTF_8);
-
-            String encodedTarget = UriUtils.encodeQueryParam(
-                    target, StandardCharsets.UTF_8);
-
-            String url = "https://api.mymemory.translated.net/get?q="
-                    + encodedText
-                    + "&langpair=en|" + encodedTarget;
-
-            if (email != null && !email.isBlank()) {
-                String encodedEmail = UriUtils.encodeQueryParam(
-                        email, StandardCharsets.UTF_8);
-
-                url += "&de=" + encodedEmail;
-            }
-
-            System.out.println("Translation target: " + target);
-
-            Map<String, Object> response = client.get()
-                    .uri(url)
+            Map<?, ?> response = client.get()
+                    .uri(uri)
                     .retrieve()
                     .body(Map.class);
 
-            return response;
+            if (response == null) {
+                return error(502, "Empty response from translation service.");
+            }
 
-        } catch (HttpClientErrorException.TooManyRequests e) {
+            Object status = response.get("responseStatus");
 
-            return Map.of(
-                    "responseStatus", 429,
-                    "responseDetails",
-                    "Daily translation limit reached. Please try again later."
+            if (!(status instanceof Number)
+                    || ((Number) status).intValue() != 200) {
+                return error(502,
+                        "This language pair is not supported or translation failed.");
+            }
+
+            Object data = response.get("responseData");
+
+            if (!(data instanceof Map)) {
+                return error(502, "Invalid translation response.");
+            }
+
+            Object translated =
+                    ((Map<?, ?>) data).get("translatedText");
+
+            if (translated == null
+                    || translated.toString().isBlank()) {
+                return error(502, "No translation was returned.");
+            }
+
+            Map<String, Object> result = new LinkedHashMap<>();
+
+            Map<String, Object> translationData =
+                    new LinkedHashMap<>();
+
+            translationData.put(
+                    "translatedText",
+                    translated.toString()
             );
 
-        } catch (HttpClientErrorException e) {
+            result.put("responseStatus", 200);
+            result.put("responseData", translationData);
+            result.put("provider", "Apertium");
 
-            return Map.of(
-                    "responseStatus", e.getStatusCode().value(),
-                    "responseDetails",
-                    "Translation provider rejected the request."
-            );
+            return result;
 
         } catch (Exception e) {
+            System.err.println(
+                    "Apertium translation error: " + e.getMessage());
 
-            return Map.of(
-                    "responseStatus", 500,
-                    "responseDetails",
-                    "Translation service failed: " + e.getMessage()
+            return error(
+                    502,
+                    "Translation service is temporarily unavailable."
             );
         }
+    }
+
+    private Map<String, Object> error(
+            int status, String message) {
+
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        result.put("responseStatus", status);
+        result.put("responseDetails", message);
+
+        return result;
     }
 }
