@@ -5,8 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -24,16 +25,40 @@ public class TranslationController {
             @RequestParam String target) {
 
         try {
-            String url = UriComponentsBuilder
-                    .fromUriString("https://api.mymemory.translated.net/get")
-                    .queryParam("q", text)
-                    .queryParam("langpair", "en|" + target)
-                    .queryParam("de", email.isBlank() ? null : email)
-                    .build()
-                    .encode()
-                    .toUriString();
+            if (text == null || text.isBlank()) {
+                return Map.of(
+                        "responseStatus", 400,
+                        "responseDetails", "Please enter some text."
+                );
+            }
 
-            Map response = client.get()
+            if (target == null || target.isBlank()) {
+                return Map.of(
+                        "responseStatus", 400,
+                        "responseDetails", "Please select a target language."
+                );
+            }
+
+            String encodedText = UriUtils.encodeQueryParam(
+                    text, StandardCharsets.UTF_8);
+
+            String encodedTarget = UriUtils.encodeQueryParam(
+                    target, StandardCharsets.UTF_8);
+
+            String url = "https://api.mymemory.translated.net/get?q="
+                    + encodedText
+                    + "&langpair=en|" + encodedTarget;
+
+            if (email != null && !email.isBlank()) {
+                String encodedEmail = UriUtils.encodeQueryParam(
+                        email, StandardCharsets.UTF_8);
+
+                url += "&de=" + encodedEmail;
+            }
+
+            System.out.println("Translation target: " + target);
+
+            Map<String, Object> response = client.get()
                     .uri(url)
                     .retrieve()
                     .body(Map.class);
@@ -46,6 +71,14 @@ public class TranslationController {
                     "responseStatus", 429,
                     "responseDetails",
                     "Daily translation limit reached. Please try again later."
+            );
+
+        } catch (HttpClientErrorException e) {
+
+            return Map.of(
+                    "responseStatus", e.getStatusCode().value(),
+                    "responseDetails",
+                    "Translation provider rejected the request."
             );
 
         } catch (Exception e) {
