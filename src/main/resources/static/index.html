@@ -1,246 +1,195 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VoiceBridge - Translator</title>
-
 <style>
 * { box-sizing: border-box; }
-
 body {
-        margin: 0;
-            font-family: Arial, sans-serif;
-                background: #f3f5fa;
-                    color: #20243a;
-                        min-height: 100vh;
-                            display: flex;
-                                justify-content: center;
-                                    align-items: center;
-                                        padding: 20px;
+  margin: 0; font-family: Arial, sans-serif; background: #f3f5fa;
+  color: #20243a; min-height: 100vh; display: flex;
+  justify-content: center; align-items: center; padding: 20px;
 }
-
 .app {
-        width: 100%;
-            max-width: 520px;
-                background: white;
-                    padding: 28px;
-                        border-radius: 22px;
-                            box-shadow: 0 10px 40px #00000012;
+  width: 100%; max-width: 520px; background: white; padding: 28px;
+  border-radius: 22px; box-shadow: 0 10px 40px #00000012;
 }
-
 h1 { margin: 0; color: #5146e5; }
 .subtitle { color: #888; margin-bottom: 25px; }
-
 h3 { font-size: 15px; margin-bottom: 10px; }
-
 textarea, select {
-        width: 100%;
-            padding: 14px;
-                border: 1px solid #ddd;
-                    border-radius: 12px;
-                        font-size: 15px;
-                            background: white;
+  width: 100%; padding: 14px; border: 1px solid #ddd;
+  border-radius: 12px; font-size: 15px; background: white;
 }
-
-textarea {
-        min-height: 115px;
-            resize: vertical;
-}
-
+textarea { min-height: 115px; resize: vertical; }
 button {
-        border: none;
-            border-radius: 12px;
-                padding: 14px 18px;
-                    cursor: pointer;
-                        font-size: 15px;
-                            font-weight: bold;
+  border: none; border-radius: 12px; padding: 14px 18px;
+  cursor: pointer; font-size: 15px; font-weight: bold;
+  background: #5146e5; color: white; width: 100%;
 }
-
-.mic {
-        background: #5146e5;
-            color: white;
-                width: 100%;
-                    margin: 15px 0 22px;
-}
-
-.translate {
-        background: #5146e5;
-            color: white;
-                width: 100%;
-                    margin-top: 15px;
-}
-
+.mic { margin: 15px 0 10px; }
+.translate { margin-top: 15px; }
 .output {
-        background: #f3f2ff;
-            padding: 16px;
-                border-radius: 12px;
-                    min-height: 90px;
-                        margin-top: 15px;
-                            white-space: pre-wrap;
-                                overflow-wrap: anywhere;
+  background: #f3f2ff; padding: 16px; border-radius: 12px;
+  min-height: 90px; margin-top: 15px; white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-
-.status {
-        color: #777;
-            text-align: center;
-                font-size: 13px;
-}
-
-button:disabled { opacity: .6; }
+.status { color: #777; text-align: center; font-size: 13px; }
+button:disabled { opacity: .6; cursor: not-allowed; }
 </style>
 </head>
 
 <body>
 <div class="app">
+  <h1>VoiceBridge 🌍</h1>
+  <p class="subtitle">Speak. Understand. Translate.</p>
 
-    <h1>VoiceBridge 🌍</h1>
-        <p class="subtitle">Speak. Understand. Translate.</p>
+  <h3>I will speak in</h3>
+  <select id="sourceLang"></select>
 
-            <h3>Your Speech</h3>
+  <h3 style="margin-top:18px">Your Speech</h3>
+  <textarea id="transcript" placeholder="Your spoken words will appear here..."></textarea>
 
-                <textarea id="transcript"
-                        placeholder="Your spoken words will appear here..."></textarea>
+  <button class="mic" id="mic">🎙 Start Speaking</button>
+  <p class="status" id="status">Ready to listen</p>
 
-                            <button class="mic" id="mic" onclick="startSpeech()">
-                                    🎙 Start Speaking
-                                        </button>
+  <h3>Translate Into</h3>
+  <select id="targetLang"></select>
 
-                                            <p class="status" id="status">Ready to listen</p>
+  <button class="translate" id="translate">Translate</button>
 
-                                                <h3>Translate Into</h3>
+  <h3>Translated Text</h3>
+  <div class="output" id="result">Your translation will appear here...</div>
+</div>
 
-                                                    <select id="language">
-                                                            <option value="hi">Hindi</option>
-                                                                    <option value="te">Telugu</option>
-                                                                            <option value="ta">Tamil</option>
-                                                                                    <option value="kn">Kannada</option>
-                                                                                            <option value="ml">Malayalam</option>
-                                                                                                    <option value="bn">Bengali</option>
-                                                                                                            <option value="mr">Marathi</option>
-                                                                                                                    <option value="gu">Gujarati</option>
-                                                                                                                            <option value="pa">Punjabi</option>
-                                                                                                                                    <option value="ur">Urdu</option>
-                                                                                                                                            <option value="en">English</option>
-                                                                                                                                                    <option value="es">Spanish</option>
-                                                                                                                                                            <option value="fr">French</option>
-                                                                                                                                                                    <option value="de">German</option>
-                                                                                                                                                                            <option value="it">Italian</option>
-                                                                                                                                                                                    <option value="pt">Portuguese</option>
-                                                                                                                                                                                            <option value="ru">Russian</option>
-                                                                                                                                                                                                    <option value="ja">Japanese</option>
-                                                                                                                                                                                                            <option value="ko">Korean</option>
-                                                                                                                                                                                                                    <option value="zh-CN">Chinese (Simplified)</option>
-                                                                                                                                                                                                                            <option value="ar">Arabic</option>
-                                                                                                                                                                                                                                    <option value="tr">Turkish</option>
-                                                                                                                                                                                                                                            <option value="id">Indonesian</option>
-                                                                                                                                                                                                                                                    <option value="th">Thai</option>
-                                                                                                                                                                                                                                                            <option value="vi">Vietnamese</option>
-                                                                                                                                                                                                                                                                </select>
+<script>
+// code, label, speech-recognition locale
+const LANGS = [
+  ["en", "English", "en-IN"],
+  ["hi", "Hindi", "hi-IN"],
+  ["te", "Telugu", "te-IN"],
+  ["ta", "Tamil", "ta-IN"],
+  ["kn", "Kannada", "kn-IN"],
+  ["ml", "Malayalam", "ml-IN"],
+  ["bn", "Bengali", "bn-IN"],
+  ["mr", "Marathi", "mr-IN"],
+  ["gu", "Gujarati", "gu-IN"],
+  ["pa", "Punjabi", "pa-IN"],
+  ["ur", "Urdu", "ur-IN"],
+  ["es", "Spanish", "es-ES"],
+  ["fr", "French", "fr-FR"],
+  ["de", "German", "de-DE"],
+  ["it", "Italian", "it-IT"],
+  ["pt", "Portuguese", "pt-PT"],
+  ["ru", "Russian", "ru-RU"],
+  ["ja", "Japanese", "ja-JP"],
+  ["ko", "Korean", "ko-KR"],
+  ["zh-CN", "Chinese (Simplified)", "zh-CN"],
+  ["ar", "Arabic", "ar-SA"],
+  ["tr", "Turkish", "tr-TR"],
+  ["id", "Indonesian", "id-ID"],
+  ["th", "Thai", "th-TH"],
+  ["vi", "Vietnamese", "vi-VN"]
+];
 
-                                                                                                                                                                                                                                                                    <button class="translate" id="translate"
-                                                                                                                                                                                                                                                                            onclick="translateText()">Translate</button>
+const transcript = document.getElementById("transcript");
+const statusText = document.getElementById("status");
+const mic = document.getElementById("mic");
+const sourceLang = document.getElementById("sourceLang");
+const targetLang = document.getElementById("targetLang");
+const translateBtn = document.getElementById("translate");
+const result = document.getElementById("result");
 
-                                                                                                                                                                                                                                                                                <h3>Translated Text</h3>
+LANGS.forEach(([code, label]) => {
+  sourceLang.add(new Option(label, code));
+  targetLang.add(new Option(label, code));
+});
+sourceLang.value = "en";
+targetLang.value = "hi";
 
-                                                                                                                                                                                                                                                                                    <div class="output" id="result">
-                                                                                                                                                                                                                                                                                            Your translation will appear here...
-                                                                                                                                                                                                                                                                                                </div>
+mic.addEventListener("click", startSpeech);
+translateBtn.addEventListener("click", translateText);
 
-                                                                                                                                                                                                                                                                                                </div>
+function startSpeech() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-                                                                                                                                                                                                                                                                                                <script>
-                                                                                                                                                                                                                                                                                                const transcript = document.getElementById("transcript");
-                                                                                                                                                                                                                                                                                                const statusText = document.getElementById("status");
-                                                                                                                                                                                                                                                                                                const mic = document.getElementById("mic");
+  if (!SpeechRecognition) {
+    alert("Speech recognition is not supported. Please use Chrome or Edge.");
+    return;
+  }
 
-                                                                                                                                                                                                                                                                                                function startSpeech() {
-                                                                                                                                                                                                                                                                                                        const SpeechRecognition =
-                                                                                                                                                                                                                                                                                                                window.SpeechRecognition ||
-                                                                                                                                                                                                                                                                                                                        window.webkitSpeechRecognition;
+  const entry = LANGS.find(l => l[0] === sourceLang.value);
+  const recognition = new SpeechRecognition();
+  recognition.lang = entry ? entry[2] : "en-US";
+  recognition.continuous = false;
+  recognition.interimResults = true;
 
-                                                                                                                                                                                                                                                                                                                            if (!SpeechRecognition) {
-                                                                                                                                                                                                                                                                                                                                        alert("Speech recognition is not supported. Please use Chrome.");
-                                                                                                                                                                                                                                                                                                                                                return;
-                                                                                                                                                                                                                                                                                                                            }
+  recognition.onstart = () => {
+    statusText.textContent = "Listening...";
+    mic.textContent = "Listening...";
+    mic.disabled = true;
+  };
 
-                                                                                                                                                                                                                                                                                                                                const recognition = new SpeechRecognition();
+  recognition.onresult = (event) => {
+    let text = "";
+    for (let i = 0; i < event.results.length; i++) {
+      text += event.results[i][0].transcript;
+    }
+    transcript.value = text;
+  };
 
-                                                                                                                                                                                                                                                                                                                                    // Browser locale is used for this basic demo.
-                                                                                                                                                                                                                                                                                                                                        recognition.lang = navigator.language || "en-US";
-                                                                                                                                                                                                                                                                                                                                            recognition.continuous = false;
-                                                                                                                                                                                                                                                                                                                                                recognition.interimResults = true;
+  recognition.onerror = (event) => {
+    statusText.textContent = "Mic error: " + event.error;
+  };
 
-                                                                                                                                                                                                                                                                                                                                                    recognition.onstart = () => {
-                                                                                                                                                                                                                                                                                                                                                                statusText.textContent = "Listening...";
-                                                                                                                                                                                                                                                                                                                                                                        mic.textContent = "Listening...";
-                                                                                                                                                                                                                                                                                                                                                    };
+  recognition.onend = () => {
+    if (!statusText.textContent.startsWith("Mic error")) {
+      statusText.textContent = "Speech captured";
+    }
+    mic.textContent = "🎙 Start Speaking";
+    mic.disabled = false;
+  };
 
-                                                                                                                                                                                                                                                                                                                                                        recognition.onresult = (event) => {
-                                                                                                                                                                                                                                                                                                                                                                    let text = "";
-                                                                                                                                                                                                                                                                                                                                                                            for (let i = 0; i < event.results.length; i++) {
-                                                                                                                                                                                                                                                                                                                                                                                            text += event.results[i][0].transcript;
-                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                    transcript.value = text;
-                                                                                                                                                                                                                                                                                                                                                        };
-
-                                                                                                                                                                                                                                                                                                                                                            recognition.onerror = (event) => {
-                                                                                                                                                                                                                                                                                                                                                                        statusText.textContent = "Error: " + event.error;
-                                                                                                                                                                                                                                                                                                                                                            };
-
-                                                                                                                                                                                                                                                                                                                                                                recognition.onend = () => {
-                                                                                                                                                                                                                                                                                                                                                                            statusText.textContent = "Speech captured";
-                                                                                                                                                                                                                                                                                                                                                                                    mic.textContent = "🎙 Start Speaking";
-                                                                                                                                                                                                                                                                                                                                                                };
-
-                                                                                                                                                                                                                                                                                                                                                                    recognition.start();
-                                                                                                                                                                                                                                                                                                }
-
-                                                                                                                                                                                                                                                                                                async function translateText() {
-                                                                                                                                                                                                                                                                                                        const text = transcript.value.trim();
-                                                                                                                                                                                                                                                                                                            const target = document.getElementById("language").value;
-                                                                                                                                                                                                                                                                                                                const result = document.getElementById("result");
-                                                                                                                                                                                                                                                                                                                    const button = document.getElementById("translate");
-
-                                                                                                                                                                                                                                                                                                                        if (!text) {
-                                                                                                                                                                                                                                                                                                                                    alert("Please speak or enter some text first.");
-                                                                                                                                                                                                                                                                                                                                            return;
-                                                                                                                                                                                                                                                                                                                        }
-
-                                                                                                                                                                                                                                                                                                                            button.disabled = true;
-                                                                                                                                                                                                                                                                                                                                button.textContent = "Translating...";
-                                                                                                                                                                                                                                                                                                                                    result.textContent = "Please wait...";
-
-                                                                                                                                                                                                                                                                                                                                        try {
-                                                                                                                                                                                                                                                                                                                                                    const response = await fetch(
-                                                                                                                                                                                                                                                                                                                                                                    `/api/translate?text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`
-                                                                                                                                                                                                                                                                                                                                                    );
-
-                                                                                                                                                                                                                                                                                                                                                            if (!response.ok) throw new Error("Translation service error");
-
-                                                                                                                                                                                                                                                                                                                                                                    const data = await response.json();
-
-                                                                                                                                                                                                                                                                                                                                                                            if (data.responseStatus !== 200) {
-                                                                                                                                                                                                                                                                                                                                                                                            throw new Error(data.responseDetails || "Translation failed");
-                                                                                                                                                                                                                                                                                                                                                                            }
-
-                                                                                                                                                                                                                                                                                                                                                                                    result.textContent =
-                                                                                                                                                                                                                                                                                                                                                                                                data.responseData.translatedText;
-
-                                                                                                                                                                                                                                                                                                                                        } catch (error) {
-                                                                                                                                                                                                                                                                                                                                                    result.textContent = "Translation failed: " + error.message;
-                                                                                                                                                                                                                                                                                                                                        } finally {
-                                                                                                                                                                                                                                                                                                                                                    button.disabled = false;
-                                                                                                                                                                                                                                                                                                                                                            button.textContent = "Translate";
-                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                                                </script>
-
-                                                                                                                                                                                                                                                                                                </body>
-                                                                                                                                                                                                                                                                                                </html>
-                                                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                                                                    )
-                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                            }
+  try {
+    recognition.start();
+  } catch (e) {
+    statusText.textContent = "Could not start mic: " + e.message;
+  }
 }
+
+async function translateText() {
+  const text = transcript.value.trim();
+  if (!text) {
+    alert("Please speak or enter some text first.");
+    return;
+  }
+
+  translateBtn.disabled = true;
+  translateBtn.textContent = "Translating...";
+  result.textContent = "Please wait...";
+
+  try {
+    const url = "/api/translate"
+      + "?text=" + encodeURIComponent(text)
+      + "&source=" + encodeURIComponent(sourceLang.value)
+      + "&target=" + encodeURIComponent(targetLang.value);
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.responseStatus !== 200) {
+      throw new Error(data.responseDetails || "Translation failed");
+    }
+    result.textContent = data.responseData.translatedText;
+  } catch (error) {
+    result.textContent = "Translation failed: " + error.message;
+  } finally {
+    translateBtn.disabled = false;
+    translateBtn.textContent = "Translate";
+  }
+}
+</script>
+</body>
+</html>
